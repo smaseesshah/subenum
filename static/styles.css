@@ -1,0 +1,410 @@
+/* styles.css — final polished stylesheet for TEAM INTRUDERS
+   Focus: improved contrast/usability for inputs, selects, file controls,
+   radios, checkboxes, alignment in settings, and overall polish.
+   Matches IDs/classes in templates/index.html and app.js.
+*/
+
+/* ---------------------------
+   Theme variables (dark-first)
+   --------------------------- */
+:root{
+  --bg: #0b1220;
+  --panel: rgba(255,255,255,0.02);
+  --muted: rgba(255,255,255,0.62);
+  --text: #e6eef8;
+  --accent: #5ea0ff;
+  --accent-2: #7ef6c7;
+  --success: #4cd964;
+  --danger: #ff6b70;
+  --glass-border: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.06);
+  --card-shadow: 0 8px 28px rgba(2,6,23,0.6);
+  --radius: 10px;
+  --toolbar-height: 72px;
+  --sidebar-width: 240px;
+  --max-width: 1200px;
+  --toast-bg: rgba(12,14,20,0.92);
+  --input-bg: rgba(255,255,255,0.02);
+  --control-height: 44px;
+  --control-radius: 10px;
+  --label-width: 160px;
+}
+/* ---------- Fix dropdown / option colors (dark theme) ---------- */
+/* Ensure selects themselves stay dark and text is readable */
+select,
+select:focus,
+select:active,
+.results-actions select,
+.quick-scan select,
+.project-control select,
+#sd_method,
+#projectSelect,
+#dashboardQuickMode {
+  background: rgba(255,255,255,0.03) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  -webkit-text-fill-color: var(--text) !important; /* Safari/Chrome */
+}
+
+/* Options in the opened dropdown — make them dark with readable text */
+select option,
+select optgroup option,
+.results-actions select option,
+.project-control select option {
+  background-color: var(--bg) !important;    /* dark dropdown background */
+  color: var(--text) !important;             /* readable option text */
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+/* When a select has focus / opened state, ensure highlight uses accent */
+select:focus,
+select:active {
+  outline: 3px solid rgba(94,160,255,0.12) !important;
+  box-shadow: none !important;
+}
+
+/* Native dropdown arrow: keep visible but subtle */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+    linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0));
+  background-position: calc(100% - 20px) calc(1em + 2px), calc(100% - 14px) calc(1em + 2px), 100% 0;
+  background-size: 6px 6px, 6px 6px, 2.5em 2.5em;
+  background-repeat: no-repeat;
+  padding-right: 40px; /* space for arrow */
+}
+
+/* MS Edge/IE: hide native expand arrow if present */
+select::-ms-expand { display: none; }
+
+/* Firefox: ensure option selection highlight is readable */
+@-moz-document url-prefix() {
+  select option:checked { background-color: rgba(94,160,255,0.12) !important; color: var(--text) !important; }
+}
+
+/* Small tweak for mobile pickers where OS overrides styles:
+   make the select control text visible even when native UI opens */
+select::-webkit-datetime-edit, select::-webkit-plaintext {
+  color: var(--text) !important;
+}
+
+/* ---------------------------
+   Base reset
+   --------------------------- */
+* { box-sizing: border-box; }
+html,body,#app { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, rgba(0,0,0,0.40) 0%, transparent 40%), var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height: 1.4;
+  min-height:100vh;
+  padding-bottom: 10px;
+}
+
+/* ---------------------------
+   Topbar / Header
+   --------------------------- */
+.topbar {
+  height: var(--toolbar-height);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.01);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  backdrop-filter: blur(4px);
+}
+
+.brand { display:flex; align-items:center; gap:12px; }
+.brand-logo { width:44px; height:44px; border-radius:8px; object-fit:cover; background:var(--panel); }
+.brand-title {
+  font-weight:900;
+  font-size:22px;
+  letter-spacing:1.8px;
+  color:var(--text);
+  text-transform:uppercase;
+}
+
+/* center controls */
+.topbar-center { display:flex; align-items:center; gap:12px; justify-content:center; flex:1; }
+.project-control { display:flex; gap:8px; align-items:center; }
+.project-control select {
+  min-width:260px;
+  padding:10px 12px;
+  border-radius:var(--control-radius);
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+  font-weight:700;
+  height: var(--control-height);
+}
+
+/* quick-scan header select & button */
+.quick-scan select, .quick-scan .btn {
+  height: var(--control-height);
+}
+
+/* topbar right */
+.topbar-right { display:flex; gap:8px; align-items:center; }
+
+/* ---------------------------
+   Buttons
+   --------------------------- */
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:10px; border:1px solid transparent;
+  background:transparent; color:var(--text); cursor:pointer; font-weight:700;
+  transition:all 160ms ease;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); }
+.btn.primary { background: linear-gradient(90deg,var(--accent), var(--accent-2)); color:#fff; border:none; }
+.btn.accent { background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); color:var(--accent); }
+.btn.danger { background: linear-gradient(90deg, rgba(255,92,108,0.12), rgba(255,92,108,0.04)); color:var(--danger); border:1px solid rgba(255,92,108,0.10); }
+.btn.icon { width:40px; justify-content:center; padding:8px; }
+
+/* ---------------------------
+   Layout: sidebar + workspace
+   --------------------------- */
+.layout {
+  display:flex;
+  gap:20px;
+  max-width: calc(var(--max-width) + var(--sidebar-width) + 80px);
+  margin: 18px auto;
+  padding: 12px;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  border-radius:12px;
+  padding:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border:1px solid var(--glass-border);
+  display:flex; flex-direction:column; gap:10px; height: calc(100vh - var(--toolbar-height) - 48px);
+  position: sticky; top: var(--toolbar-height); align-self:flex-start;
+}
+.sidebar ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.side-item {
+  padding:12px 14px; border-radius:10px; color:var(--muted); cursor:pointer;
+  display:flex; align-items:center; gap:10px; transition:all 140ms;
+  background: transparent; border:1px solid transparent;
+}
+.side-item:hover { transform: translateX(6px); color:var(--text); background: rgba(255,255,255,0.018); }
+.side-item.active { background: linear-gradient(90deg,var(--accent) 0%, rgba(255,255,255,0.01) 50%); color:#fff; box-shadow: var(--card-shadow); }
+
+/* workspace */
+.workspace { flex:1; min-height: calc(100vh - var(--toolbar-height) - 48px); }
+.page { display:none; opacity:0; transform: translateY(6px); transition:all 240ms ease; }
+.page.active { display:block; opacity:1; transform:none; }
+
+/* ---------------------------
+   Cards & panels
+   --------------------------- */
+.cards {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap:12px;
+  margin-bottom:12px;
+}
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  padding:14px; border-radius:12px; border:1px solid var(--glass-border);
+  box-shadow: var(--card-shadow); min-height:72px;
+}
+.card-title { color:var(--muted); font-size:13px; margin-bottom:8px; }
+.card-value { font-size:20px; font-weight:800; color:var(--text); }
+
+/* panels */
+.panel { background: var(--panel); border-radius:12px; padding:12px; border:1px solid var(--glass-border); box-shadow: var(--card-shadow); margin-bottom:12px; }
+.panel.split { display:grid; grid-template-columns: 1fr 420px; gap:12px; align-items:start; }
+.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.panel-header h3, .panel-header h2 { margin:0; font-size:16px; }
+
+/* ---------------------------
+   Forms, inputs, selects, file inputs
+   --------------------------- */
+.form-row { margin:10px 0; display:flex; gap:12px; align-items:center; }
+.form-row label { min-width: var(--label-width); color:var(--muted); font-size:14px; font-weight:700; }
+.input, input[type="text"], input[type="number"], textarea, select {
+  padding: 10px 12px;
+  height: var(--control-height);
+  border-radius: var(--control-radius);
+  background: var(--input-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  font-size: 14px;
+  min-width: 0;
+  box-shadow: none;
+}
+select { -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0)); background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px), 100% 0; background-size: 6px 6px, 6px 6px, 2.5em 2.5em; background-repeat: no-repeat; padding-right: 40px; }
+
+/* File input: modern browsers */
+input[type="file"] {
+  background: var(--input-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 8px;
+  height: var(--control-height);
+}
+input[type="file"]::file-selector-button {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  padding: 8px 10px;
+  margin-right:8px;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* For browsers that support ::-webkit-file-upload-button */
+input[type="file"]::-webkit-file-upload-button {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* Focus states */
+input:focus, select:focus, button:focus, textarea:focus, input[type="file"]:focus {
+  outline: 3px solid rgba(94,160,255,0.12);
+  outline-offset: 2px;
+}
+
+/* ---------------------------
+   Radio & Checkbox styling
+   --------------------------- */
+/* Use accent-color where supported (simple & accessible) */
+input[type="checkbox"], input[type="radio"] {
+  width:18px; height:18px; accent-color: var(--accent);
+  cursor: pointer;
+}
+/* Improve label alignment and spacing */
+.option-block label, .radio-row label {
+  display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text); font-weight:700;
+}
+
+/* For a slightly custom look on checkbox (fallback) */
+input[type="checkbox"] {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.02);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+/* ---------------------------
+   Option blocks & helpers
+   --------------------------- */
+.option-block { padding:10px; border-radius:8px; border:1px dashed var(--glass-border); background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); }
+.option-block.hidden, .hidden { display:none !important; }
+
+/* ---------------------------
+   Console / log
+   --------------------------- */
+.console {
+  background: rgba(2,6,10,0.6);
+  color: #cfe6ff;
+  padding:12px;
+  border-radius:8px;
+  min-height:200px;
+  max-height:520px;
+  overflow:auto;
+  border:1px solid rgba(255,255,255,0.03);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  font-size:13px;
+}
+.console.collapsed { max-height:80px; overflow:auto; }
+
+/* ---------------------------
+   Table & results styling
+   --------------------------- */
+.table-wrap { overflow:auto; margin-top:8px; }
+table { width:100%; border-collapse: collapse; background:transparent; }
+thead th { text-align:left; font-size:13px; padding:10px; border-bottom:1px solid var(--border); color:var(--muted); font-weight:800; }
+tbody td { padding:10px; border-bottom:1px dashed var(--glass-border); color:var(--text); font-size:14px; vertical-align:middle; }
+tr:hover td { background: linear-gradient(90deg, rgba(255,255,255,0.01), transparent); }
+
+/* Shodan layout tweak */
+#shodan_results_block .table-wrap { margin-left: -18px; }
+#shodan_table th#shodan_cves_th { width: 280px; }
+#shodan_table tbody td:nth-child(5) { max-width: 320px; word-wrap:break-word; }
+
+/* Results actions (export + format + collapse) */
+.results-actions { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.results-actions select { padding:8px 10px; border-radius:8px; background: var(--input-bg); border:1px solid var(--glass-border); color:var(--text); min-width:90px; font-weight:700; }
+.results-actions .btn { height: 40px; }
+
+/* collapse behavior */
+.results-collapsed { max-height:0 !important; overflow:hidden !important; padding:0 !important; border:0 !important; margin:0 !important; }
+
+/* ---------------------------
+   IP badges (public/private)
+   --------------------------- */
+.ip-badge {
+  display:inline-block; padding:4px 8px; border-radius:999px; font-weight:700; font-size:13px; margin-right:6px;
+  border:1px solid rgba(255,255,255,0.03);
+}
+.ip-public { background: rgba(94,160,255,0.10); color: var(--accent); border-color: rgba(94,160,255,0.14); }
+.ip-private { background: rgba(255,110,110,0.06); color: var(--danger); border-color: rgba(255,110,110,0.10); }
+
+/* ---------------------------
+   Settings layout: nicer table-like alignment
+   --------------------------- */
+.form-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap:12px;
+  align-items:start;
+}
+.form-grid > div { display:flex; flex-direction:column; gap:8px; }
+.form-grid label { font-weight:800; color:var(--muted); text-transform:none; }
+
+/* ensure API key inputs have room and left-aligned labels */
+.form-grid input[type="password"], .form-grid input[type="text"] { text-align:left; }
+
+/* small helpers */
+.center { display:flex; align-items:center; justify-content:center; }
+.visually-hidden { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+
+/* toast */
+.toast {
+  position: fixed; right:20px; bottom:24px; z-index:9999;
+  padding:12px 16px; border-radius:10px; background:var(--toast-bg); color:var(--text);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6); border:1px solid var(--glass-border);
+  transform-origin: bottom right; transition: transform 150ms ease, opacity 150ms ease;
+}
+.toast.hidden { opacity:0; transform: translateY(8px) scale(0.98); pointer-events:none; }
+
+/* modal */
+.modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index:9998; background: rgba(3,6,12,0.72); }
+.modal.hidden { display:none; }
+.modal-card { width: min(860px, 94%); max-width:860px; border-radius:12px; background: rgba(8,12,18,0.98); color:var(--text); border:1px solid var(--glass-border); box-shadow: var(--card-shadow); overflow:hidden; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+.modal-body { padding:16px; max-height:60vh; overflow:auto; }
+.modal-footer { padding:12px 16px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--border); }
+
+/* responsive */
+@media (max-width: 1000px) {
+  .panel.split { grid-template-columns: 1fr; }
+  .sidebar { display:none; }
+  .layout { padding:12px; max-width: 96%; }
+  .project-control select { min-width:160px; }
+}
+
+/* remove footer shade if any footer present */
+footer { background: transparent; box-shadow:none; border-top:none; color:var(--muted); padding: 8px 0; }
