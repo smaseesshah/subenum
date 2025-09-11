@@ -776,7 +776,7 @@
       const cfg = await fetchJsonSafe("/config/config.json");
       if (cfg) s = { ...s, ...cfg };
       else {
-        const legacy = await fetchJsonSafe("/.project/settings.json");
+        const legacy = await fetchJsonSafe("/config/config.json");
         if (legacy) s = { ...s, ...legacy };
       }
     }
@@ -815,7 +815,7 @@
       else showToast("Saved (server may not persist /api/settings)");
       // try write to config route (server might not accept)
       try { await fetch("/config/config.json", { method: "PUT", headers: {"Content-Type":"application/json"}, credentials: "same-origin", body: JSON.stringify(body) }); } catch (e) {}
-      try { await fetch("/.project/settings.json", { method: "PUT", headers: {"Content-Type":"application/json"}, credentials: "same-origin", body: JSON.stringify(body) }); } catch (e) {}
+      try { await fetch("/config/config.json", { method: "PUT", headers: {"Content-Type":"application/json"}, credentials: "same-origin", body: JSON.stringify(body) }); } catch (e) {}
     } catch (e) {
       console.error("saveSettingsFromForm", e);
       showToast("Failed to save settings (network)");
