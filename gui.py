@@ -61,7 +61,7 @@ PROJECT_ROOT = os.path.join(HERE, ".project")
 RESULTS_ROOT = os.path.join(HERE, "results")
 CONFIG_DIR = os.path.join(HERE, "config")
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.json")
-LEGACY_SETTINGS_PATH = os.path.join(PROJECT_ROOT, "settings.json")
+LEGACY_SETTINGS_PATH = os.path.join(PROJECT_ROOT, "config.json")
 
 os.makedirs(PROJECT_ROOT, exist_ok=True)
 os.makedirs(RESULTS_ROOT, exist_ok=True)
@@ -674,7 +674,7 @@ def config_file():
         return jsonify({"error": "failed to save config"}), 500
     return jsonify({"ok": True})
 
-@app.route("/.project/settings.json", methods=["GET", "PUT"])
+@app.route("/config/config.json", methods=["GET", "PUT"])
 def legacy_settings_file():
     if request.method == "GET":
         # return legacy settings if exists, else return canonical settings
