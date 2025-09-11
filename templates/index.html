@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TEAM INTRUDERS — GUI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- External stylesheet kept, inline overrides below for quick fixes requested -->
+  <link rel="stylesheet" href="/static/styles.css" />
+
+  <!-- Inline CSS for immediate fixes requested:
+       - ensure inputs/selects/file controls/dropdowns show readable text (dark theme)
+       - style API key inputs, sd_method dropdown, projectSelect, quick actions
+  -->
+  <style>
+    /* make form controls readable on dark backgrounds */
+    select, input[type="text"], input[type="number"], input[type="password"], textarea, input[type="file"] {
+      background: rgba(255,255,255,0.02) !important;
+      color: #e6eef8 !important;
+      border: 1px solid rgba(255,255,255,0.06) !important;
+      padding: 10px 12px !important;
+      border-radius: 10px !important;
+      height: 44px !important;
+      font-weight: 700;
+    }
+
+    /* project select and quick actions (dashboard) */
+    #projectSelect { min-width: 260px; font-weight:800; color:#e6eef8 !important; }
+    .quick-scan select, .quick-scan .btn { height:44px; }
+
+    /* subdomain method dropdown */
+    #sd_method { min-width:220px; font-weight:800; color:#e6eef8 !important; }
+
+    /* API key inline style */
+    #settings .form-grid input[type="password"], #settings .form-grid input[type="text"] {
+      padding: 10px 12px; border-radius:8px; background: rgba(255,255,255,0.02); color: #e6eef8; border:1px solid rgba(255,255,255,0.04);
+    }
+    /* file upload button visible */
+    input[type="file"]::file-selector-button, input[type="file"]::-webkit-file-upload-button {
+      background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #e6eef8; padding: 8px 10px; border-radius:8px; font-weight:700; cursor:pointer;
+    }
+
+    /* radio and check spacing */
+    .radio-row label, .option-block label { display:inline-flex; align-items:center; gap:8px; color:#e6eef8; font-weight:700; }
+
+    /* make results-actions select visible */
+    .results-actions select { color: #e6eef8; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); }
+
+    /* make header spacing nicer after removing quick-scan controls */
+    .topbar-center { justify-content: center; gap: 18px; }
+  </style>
+</head>
+<body>
+  <div id="app" class="theme-dark">
+    <!-- TOP NAV -->
+    <header class="topbar" role="banner">
+      <div class="topbar-left">
+        <div class="brand">
+          <img src="/static/logo.svg" alt="TEAM INTRUDERS" class="brand-logo" onerror="this.style.display='none'"/>
+          <span class="brand-title">TEAM INTRUDERS</span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <!-- Project selection is the single source of truth -->
+        <div class="project-control center-inline">
+          <label for="projectSelect" class="visually-hidden">Project (domain)</label>
+          <select id="projectSelect" aria-label="Select project (domain)"></select>
+          <button id="btnCreateProject" class="btn primary">Create Project</button>
+          <button id="btnDeleteProject" class="btn danger" title="Delete selected project">Delete</button>
+          <div id="cardProjects" class="project-count" title="Number of projects">0</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button id="settingsBtn" class="btn">Settings</button>
+      </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <div class="layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" role="navigation" aria-label="Main navigation">
+        <ul>
+          <li class="side-item active" data-page="dashboard">Dashboard</li>
+          <li class="side-item" data-page="subdomains">Subdomains</li>
+          <li class="side-item" data-page="ip">IP Extraction</li>
+          <li class="side-item" data-page="live">Live Check</li>
+          <li class="side-item" data-page="shodan">Shodan Integration</li>
+          <li class="side-item" data-page="settings">Settings</li>
+        </ul>
+      </aside>
+
+      <!-- WORKSPACE -->
+      <main class="workspace" role="main">
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="page active" aria-live="polite">
+          <div class="cards">
+            <div class="card">
+              <div class="card-title">Total Projects</div>
+              <div class="card-value" id="cardProjectsValue">0</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Total Subdomains</div>
+              <div class="card-value" id="cardSubdomains">-</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Total IPs</div>
+              <div class="card-value" id="cardIps">-</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Live Hosts</div>
+              <div class="card-value" id="cardLive">-</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Shodan Entries</div>
+              <div class="card-value" id="cardShodan">-</div>
+            </div>
+          </div>
+
+          <div class="dashboard-panels">
+            <div class="panel activity">
+              <div class="panel-header">
+                <h3>Activity Feed</h3>
+                <small id="lastUpdated">—</small>
+              </div>
+              <ul id="activityList" class="activity-list" aria-live="polite"></ul>
+            </div>
+
+            <div class="panel quick-actions">
+              <h3>Quick Actions</h3>
+
+              <!-- Dashboard Quick Controls -->
+              <div class="form-row">
+                <label class="visually-hidden" for="dashboardQuickMode">Mode</label>
+                <select id="dashboardQuickMode" aria-label="Dashboard quick mode" style="min-width:200px">
+                  <option value="workflow" selected>Quick (Workflow)</option>
+                  <option value="brute">Brute Force</option>
+                  <option value="api">API</option>
+                  <option value="both">Both</option>
+                </select>
+                <button id="dashboardQuickStart" class="btn accent">Start Scan</button>
+                <div class="small muted" style="margin-left:12px">Select project from header then start.</div>
+              </div>
+
+              <div class="form-row">
+                <button id="btnRefreshResults" class="btn">Refresh Results</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Live Console</h3>
+              </div>
+              <pre id="dashboard_log" class="console" aria-live="polite" role="log"></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUBDOMAINS -->
+        <section id="subdomains" class="page" aria-hidden="true">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Subdomain Discovery</h2>
+              <div class="muted small">Project: <span id="sd_project_name">—</span></div>
+            </div>
+
+            <div class="form-row">
+              <label for="sd_method">Method</label>
+              <select id="sd_method" aria-controls="sd_options">
+                <option value="api">API</option>
+                <option value="brute">Brute Force</option>
+                <option value="both" selected>Both</option>
+              </select>
+            </div>
+
+            <div id="sd_options" class="dynamic-options">
+              <fieldset id="sd_api_options" class="option-block" aria-hidden="false">
+                <legend>API Sources (crt.sh & Wayback always used)</legend>
+                <label><input type="checkbox" name="sd_api" value="virustotal" checked /> VirusTotal</label>
+                <label><input type="checkbox" name="sd_api" value="securitytrails" checked/> SecurityTrails</label>
+                <label><input type="checkbox" name="sd_api" value="otx" checked/> OTX</label>
+              </fieldset>
+
+              <div id="sd_brute_options" class="option-block hidden" aria-hidden="true">
+                <label>Wordlist (upload)</label>
+                <div class="file-upload">
+                  <input id="sd_wordlist_file" type="file" accept=".txt" />
+                  <button id="sd_upload_wordlist" class="btn">Choose & Upload</button>
+                  <div id="sd_wordlist_status" class="muted small">No file uploaded</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row actions">
+              <button id="sd_start" class="btn accent">Start Scan</button>
+            </div>
+
+            <div class="results-actions">
+              <select id="sd_export_format" aria-label="Export format">
+                <option value="txt" selected>txt</option>
+                <option value="json">json</option>
+                <option value="csv">csv</option>
+                <option value="html">html</option>
+              </select>
+              <button id="sd_export" class="btn primary">Export</button>
+              <button id="sd_toggle_results" class="btn">Collapse</button>
+            </div>
+
+            <div id="sd_results_block" class="panel">
+              <h3>Results</h3>
+              <div class="table-wrap">
+                <table id="subdomains_table">
+                  <thead><tr><th>Subdomain</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- IP EXTRACTION -->
+        <section id="ip" class="page" aria-hidden="true">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>IP Extraction</h2>
+              <div class="muted small">Project: <span id="ip_project_name">—</span></div>
+            </div>
+
+            <div class="form-row">
+              <label>Use merged results or upload file</label>
+              <div class="radio-row">
+                <label><input type="radio" name="ip_source" value="merged" checked /> From merged</label>
+                <label><input type="radio" name="ip_source" value="upload" /> Upload file</label>
+              </div>
+            </div>
+
+            <div id="ip_upload_block" class="file-block hidden">
+              <input id="ip_upload_file" type="file" accept=".txt,.json,.csv,.html" />
+              <button id="ip_upload_btn" class="btn">Upload</button>
+              <div id="ip_upload_status" class="muted small">No file uploaded</div>
+            </div>
+
+            <div class="form-row actions">
+              <button id="ip_start" class="btn accent">Run IP Extraction</button>
+            </div>
+
+            <div class="results-actions">
+              <select id="ip_export_format" aria-label="Export format">
+                <option value="txt" selected>txt</option>
+                <option value="json">json</option>
+                <option value="csv">csv</option>
+                <option value="html">html</option>
+              </select>
+              <button id="ip_export" class="btn primary">Export</button>
+              <button id="ip_toggle_results" class="btn">Collapse</button>
+            </div>
+
+            <div id="ip_results_block" class="panel">
+              <h3>IP Results</h3>
+              <div class="table-wrap">
+                <table id="ip_table">
+                  <thead><tr><th>Host</th><th>Origin (IPs)</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE CHECK -->
+        <section id="live" class="page" aria-hidden="true">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Live Check</h2>
+              <div class="muted small">Project: <span id="live_project_name">—</span></div>
+            </div>
+
+            <div class="form-row">
+              <label>Input</label>
+              <div class="radio-row">
+                <label><input type="radio" name="live_source" value="dashboard" checked /> Use dashboard IPs</label>
+                <label><input type="radio" name="live_source" value="upload" /> Upload file</label>
+              </div>
+            </div>
+
+            <div id="live_upload_block" class="file-block hidden">
+              <input id="live_upload_file" type="file" accept=".txt,.csv,.json" />
+              <button id="live_upload_btn" class="btn">Upload</button>
+              <div id="live_upload_status" class="muted small">No file uploaded</div>
+            </div>
+
+            <div class="form-row actions">
+              <button id="live_start" class="btn accent">Start Live Check</button>
+            </div>
+
+            <div class="results-actions">
+              <select id="live_export_format" aria-label="Export format">
+                <option value="txt" selected>txt</option>
+                <option value="json">json</option>
+                <option value="csv">csv</option>
+                <option value="html">html</option>
+              </select>
+              <button id="live_export" class="btn primary">Export</button>
+              <button id="live_toggle_results" class="btn">Collapse</button>
+            </div>
+
+            <div id="live_results_block" class="panel">
+              <h3>Summary & Results</h3>
+              <div class="table-wrap">
+                <table id="live_table">
+                  <thead><tr><th>Host</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SHODAN -->
+        <section id="shodan" class="page" aria-hidden="true">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Shodan Integration</h2>
+              <div class="muted small">Project: <span id="shodan_project_name">—</span></div>
+            </div>
+
+            <div class="form-row">
+              <label>Input</label>
+              <div class="radio-row">
+                <label><input type="radio" name="shodan_source" value="dashboard" checked /> Use dashboard IPs</label>
+                <label><input type="radio" name="shodan_source" value="upload" /> Upload file</label>
+              </div>
+            </div>
+
+            <div id="shodan_upload_block" class="file-block hidden">
+              <input id="shodan_upload_file" type="file" accept=".txt,.csv,.json" />
+              <button id="shodan_upload_btn" class="btn">Upload</button>
+              <div id="shodan_upload_status" class="muted small">No file uploaded</div>
+            </div>
+
+            <div class="form-row">
+              <label>Timeout (s)</label>
+              <input id="shodan_timeout" type="number" min="5" value="15" />
+              <label>Delay (s)</label>
+              <input id="shodan_delay" type="number" min="0" value="2" />
+              <button id="shodan_start" class="btn accent">Start Shodan Scrape</button>
+            </div>
+
+            <div class="results-actions">
+              <select id="shodan_export_format" aria-label="Export format">
+                <option value="json" >json</option>
+                <option value="txt " selected>txt</option>
+                <option value="csv">csv</option>
+                <option value="html">html</option>
+              </select>
+              <button id="shodan_export" class="btn primary">Export</button>
+              <button id="shodan_toggle_results" class="btn">Collapse</button>
+            </div>
+
+            <div id="shodan_results_block" class="panel">
+              <h3>Shodan Results</h3>
+              <div class="table-wrap">
+                <table id="shodan_table">
+                  <thead><tr>
+                    <th>IP</th>
+                    <th>Hostnames</th>
+                    <th>Ports</th>
+                    <th>Services</th>
+                    <th id="shodan_cves_th">CVEs</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="settings" class="page" aria-hidden="true">
+          <div class="panel settings-panel">
+            <h2>Settings</h2>
+            <div class="form-grid">
+              <div>
+                <label>Default wordlist (path or uploaded)</label>
+                <input id="set_wordlist" type="text" placeholder="wordlist.txt or .project/..." />
+              </div>
+              <div>
+                <label>Upload default wordlist</label>
+                <div class="file-upload">
+                  <input id="set_wordlist_file" type="file" accept=".txt" />
+                  <button id="set_wordlist_upload" class="btn">Upload</button>
+                  <div id="set_wordlist_status" class="muted small">No file uploaded</div>
+                </div>
+              </div>
+              <div>
+                <label>Default threads</label>
+                <input id="set_threads" type="number" min="1" />
+              </div>
+              <div>
+                <label>Default timeout (s)</label>
+                <input id="set_timeout" type="number" min="1" />
+              </div>
+            </div>
+
+            <h3>API Keys</h3>
+            <div class="form-grid">
+              <div>
+                <label>VirusTotal API Key</label>
+                <input id="key_virustotal" type="password" />
+              </div>
+              <div>
+                <label>SecurityTrails API Key</label>
+                <input id="key_securitytrails" type="password" />
+              </div>
+              <div>
+                <label>OTX API Key</label>
+                <input id="key_otx" type="password" />
+              </div>
+            </div>
+
+            <div class="form-row actions">
+              <button id="saveSettings" class="btn primary">Save & Apply</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- MODALS & TOASTS -->
+    <div id="modalOverlay" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card" role="document" aria-labelledby="modalTitle">
+        <header class="modal-header">
+          <h3 id="modalTitle">Modal</h3>
+          <button id="modalClose" class="btn icon" aria-label="Close">&times;</button>
+        </header>
+        <div id="modalBody" class="modal-body"></div>
+        <footer class="modal-footer" id="modalFooter"></footer>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <!-- App JS (external) -->
+    <script src="/static/app.js" defer></script>
+
+    <!-- Inline JS to implement the request: show/hide API checkboxes & brute upload based on sd_method
+         and show/hide upload blocks for ip/shodan/live; also ensure header quick-scan controls removed.
+         This script intentionally uses only DOM operations (no network) and preserves IDs used by app.js.
+    -->
+    <script>
+      (function(){
+        // Helper
+        const $ = (s, ctx=document) => ctx.querySelector(s);
+        const $$ = (s, ctx=document) => Array.from(ctx.querySelectorAll(s));
+
+        function setSdVisibility() {
+          const method = (document.getElementById("sd_method")?.value || "api");
+          const apiBlock = document.getElementById("sd_api_options");
+          const bruteBlock = document.getElementById("sd_brute_options");
+          if (!apiBlock || !bruteBlock) return;
+          if (method === "api") {
+            apiBlock.classList.remove("hidden"); apiBlock.setAttribute("aria-hidden","false");
+            bruteBlock.classList.add("hidden"); bruteBlock.setAttribute("aria-hidden","true");
+          } else if (method === "brute") {
+            bruteBlock.classList.remove("hidden"); bruteBlock.setAttribute("aria-hidden","false");
+            apiBlock.classList.add("hidden"); apiBlock.setAttribute("aria-hidden","true");
+          } else { // both
+            apiBlock.classList.remove("hidden"); apiBlock.setAttribute("aria-hidden","false");
+            bruteBlock.classList.remove("hidden"); bruteBlock.setAttribute("aria-hidden","false");
+          }
+        }
+
+        // When sd_method changes
+        const sdMethod = document.getElementById("sd_method");
+        if (sdMethod) {
+          sdMethod.addEventListener("change", setSdVisibility);
+          // initialize on load
+          setSdVisibility();
+        }
+
+        // Ensure crt.sh and wayback checkboxes are always checked & disabled
+        $$("input[name='sd_api'][value='crtsh']").forEach(el => { el.checked = true; el.disabled = true; });
+        $$("input[name='sd_api'][value='wayback']").forEach(el => { el.checked = true; el.disabled = true; });
+
+        // Show/hide upload blocks for ip/live/shodan based on radio selection
+        function wireUploadToggle(radioName, blockId) {
+          const radios = document.querySelectorAll(`input[name='${radioName}']`);
+          const block = document.getElementById(blockId);
+          if (!radios || !block) return;
+          radios.forEach(r => r.addEventListener("change", () => {
+            const v = document.querySelector(`input[name='${radioName}']:checked`)?.value;
+            if (v === "upload") block.classList.remove("hidden"); else block.classList.add("hidden");
+          }));
+          // initialize
+          const v0 = document.querySelector(`input[name='${radioName}']:checked`)?.value;
+          if (v0 === "upload") block.classList.remove("hidden"); else block.classList.add("hidden");
+        }
+        wireUploadToggle("ip_source", "ip_upload_block");
+        wireUploadToggle("live_source", "live_upload_block");
+        wireUploadToggle("shodan_source", "shodan_upload_block");
+
+        // Ensure upload buttons are present: if any missing, log in console
+        ["ip_upload_btn","live_upload_btn","shodan_upload_btn","sd_upload_wordlist","set_wordlist_upload"].forEach(id => {
+          if (!document.getElementById(id)) console.debug("Missing upload button:", id);
+        });
+
+        // Style fixes: make dropdown arrow text visible on dark backgrounds for specific selects
+        ["projectSelect","sd_method","dashboardQuickMode","sd_export_format"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.color = "#e6eef8";
+        });
+
+        // Remove header quick-scan leftover if any (defensive)
+        const maybeQuickMode = document.getElementById("quickScanMode");
+        const maybeQuickBtn = document.getElementById("quickStartBtn");
+        if (maybeQuickMode) maybeQuickMode.remove();
+        if (maybeQuickBtn) maybeQuickBtn.remove();
+        const maybeQuickDisplay = document.getElementById("quick_project_display");
+        if (maybeQuickDisplay) maybeQuickDisplay.remove();
+      })();
+    </script>
+  </div>
+</body>
+</html>
