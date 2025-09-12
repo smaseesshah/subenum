@@ -65,13 +65,11 @@ pip install -r requirements.txt
 * Adjust concurrency (`threads`), timeouts, and default export formats in config.
 * Shodan enrichment is implemented via scraping; no API key required for that mode.
 
-> **Security note:** Keep keys out of version control. Treat `config/config.json` as sensitive if it contains secrets.
-
 ---
 
 ## Usage — interactive, GUI, and direct CLI
 
-### Interactive menu (recommended)
+### Interactive menu
 
 ```bash
 python3 main.py --interactive
