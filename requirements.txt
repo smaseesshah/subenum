@@ -1,0 +1,8 @@
+requests
+beautifulsoup4
+lxml
+Flask
+Flask-Cors
+tqdm
+colorama
+urllib3
