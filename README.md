@@ -1,4 +1,4 @@
-# Subenum — Subdomain & IP Enumeration Toolkit
+# Subdomain & IP Enumeration Toolkit - BY **TEAM INTRUDERS** (BLACK BYT3)
 > A modular OSINT/enumeration pipeline created by **TEAM INTRUDERS**.
 > Combine brute-force + API collectors → merge → resolve → live-check → Shodan Integration
 
@@ -21,7 +21,7 @@
 
 ## About
 
-This toolkit was developed by **TEAM INTRUDERS** to streamline subdomain enumeration, IP resolution, liveness checks, and enrichment via Shodan scraping. Modules are standalone but can be chained via the interactive menu (`main.py`) or the GUI (`gui.py`).
+This toolkit was developed by **TEAM INTRUDERS (BLACK BYT3)** to streamline subdomain enumeration, IP resolution, liveness checks, and enrichment via Shodan scraping. Modules are standalone but can be chained via the interactive menu (`main.py`) or the GUI (`gui.py`).
 
 ---
 
