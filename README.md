@@ -13,9 +13,8 @@
 5. [Usage — interactive, GUI, and direct CLI](#usage---interactive-gui-and-direct-cli)
 6. [Outputs & formats](#outputs--formats)
 7. [Recommended workflow / examples](#recommended-workflow--examples)
-8. [Security & ethics](#security--ethics)
-9. [Files & module map](#files--module-map)
-10. [References](#references)
+8. [Files & module map](#files--module-map)
+9. [References](#references)
 
 ---
 
